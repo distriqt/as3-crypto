@@ -78,6 +78,7 @@ package com.hurlant.tests {
 
 			_core = new FlexUnitCore();
 			_core.addListener(new TraceListener());
+			_core.addListener(new TestRunListener());
 			_core.run(tests);
 		}
 
