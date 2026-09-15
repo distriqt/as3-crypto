@@ -1,0 +1,9 @@
+air.sdk=/path/to/air/sdk
+github.repo=distriqt/as3-crypto
+
+project.id=as3crypto
+project.name=as3 crypto
+project.description=A cryptography library written in ActionScript 3 that provides several common algorithms.
+project.src=src
+output.build=bin
+output.docs=docs
