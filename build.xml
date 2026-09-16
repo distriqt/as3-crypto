@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="build" name="lib" xmlns:if="ant:if" xmlns:unless="ant:unless">
+    <available file="${user.home}/.ant/lib/ant-contrib.jar" property="antcontrib.available" />
+    <target name="bootstrap-download" unless="antcontrib.available">
+        <mkdir dir="${user.home}/.ant/lib" />
+        <get dest="${user.home}/.ant/lib/ant-contrib.jar"
+            src="https://search.maven.org/remotecontent?filepath=ant-contrib/ant-contrib/1.0b3/ant-contrib-1.0b3.jar" />
+    </target>
+    <target name="bootstrap" depends="bootstrap-download">
+        <taskdef resource="net/sf/antcontrib/antlib.xml"
+            classpath="${user.home}/.ant/lib/ant-contrib.jar" />
+    </target>
+
+    <!-- CONFIG -->
+    <dirname property="project.basedir" file="${ant.file.lib}" />
+    <property file="${project.basedir}/build.properties" description="build properties" />
+    <property name="version.properties" value="${project.basedir}/version.properties" />
+    <property name="project.builddir" value="${project.basedir}/${output.build}" />
+
+    <!-- ENVIRONMENT -->
+    <property environment="env." />
+    <condition property="AIR_SDK_HOME" value="${air.sdk}" else="${env.AIR_HOME}">
+        <isset property="air.sdk" />
+    </condition>
+    <taskdef resource="flexTasks.tasks" classpath="${AIR_SDK_HOME}/ant/lib/flexTasks.jar" />
+    <condition property="air.apm" value="apm.bat" else="apm">
+        <os family="windows" />
+    </condition>
+    <condition property="air.asdoc" value="${AIR_SDK_HOME}/bin/asdoc.bat"
+        else="${AIR_SDK_HOME}/bin/asdoc">
+        <os family="windows" />
+    </condition>
+
+
+    <!-- VERSIONING -->
+    <target name="version">
+        <propertyfile file="${version.properties}">
+            <entry key="version_build" type="int" operation="+" value="1" />
+        </propertyfile>
+    </target>
+
+    <!-- CLEAN -->
+    <target name="clean">
+        <delete dir="${project.builddir}" />
+    </target>
+
+    <!-- BUILD -->
+    <target name="build" depends="bootstrap">
+        <property file="${version.properties}" />
+        <var name="version" value="${version_major}.${version_minor}.${version_build}" />
+        <echo message="Building ${project.name} v${version}" />
+        <compc output="${project.builddir}/${project.id}.swc" debug="true" optimize="true">
+            <load-config filename="${AIR_SDK_HOME}/frameworks/air-config.xml" />
+            <compiler.define name="CONFIG::DEBUG" value="true" />
+            <compiler.define name="CONFIG::VERSION" value="'${version}'" />
+            <source-path path-element="${project.basedir}/${project.src}" />
+            <include-sources dir="${project.basedir}/${project.src}" includes="*" />
+        </compc>
+    </target>
+
+    <!-- DOCS -->
+    <target name="docs">
+        <delete dir="${project.basedir}/${output.docs}" />
+        <mkdir dir="${project.basedir}/${output.docs}" />
+        <exec executable="${air.asdoc}" failonerror="true">
+            <env key="FLEX_HOME" value="${AIR_SDK_HOME}" />
+            <env key="FALCON_HOME" value="${AIR_SDK_HOME}" />
+            <arg line="-compiler.locale en_US" />
+            <arg line="-source-path ${project.basedir}/${project.src}" />
+            <arg line="-window-title '${project.name} API Docs'" />
+            <arg line="-main-title '${project.name} API Docs'" />
+            <arg line="-doc-sources ${project.basedir}/${project.src}" />
+            <arg line="-output ${project.basedir}/${output.docs}" />
+            <arg line="-lenient" />
+            <arg line="-library-path+='${AIR_SDK_HOME}/frameworks/libs/air/airglobal.swc'" />
+        </exec>
+    </target>
+
+    <!-- TESTS -->
+    <target name="test">
+        <echo message="Running tests for ${project.name}" />
+        <exec executable="${AIR_SDK_HOME}/bin/mxmlc" failonerror="true">
+            <arg line="-load-config ${AIR_SDK_HOME}/frameworks/air-config.xml" />
+            <arg line="-output ${project.builddir}/${project.id}.tests.swf" />
+            <arg line="-debug=true" />
+            <arg line="-source-path ${project.basedir}/${project.src}" />
+            <arg line="-source-path ${project.basedir}/src.tests" />
+            <arg line="-library-path+=${project.basedir}/libs/flexunit/flexunit-4.1.0.swc" />
+            <arg line="-library-path+=${project.builddir}/${project.id}.swc" />
+            <arg line="${project.basedir}/src.tests/com/hurlant/tests/AS3CryptoTests.as" />
+        </exec>
+        <echo file="${project.builddir}/test-application.xml"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<application xmlns="http://ns.adobe.com/air/application/51.0">
+    <id>${project.id}.tests</id>
+    <versionNumber>1.0.0</versionNumber>
+    <filename>${project.id} tests</filename>
+    <initialWindow>
+        <content>${project.id}.tests.swf</content>
+        <visible>false</visible>
+    </initialWindow>
+</application>
+]]></echo>
+        <exec executable="${AIR_SDK_HOME}/bin/adl" dir="${project.builddir}" failonerror="true">
+            <arg value="test-application.xml" />
+        </exec>
+    </target>
+
+
+    <target name="deploy" depends="build, test"> 
+        <echo message="Deploying ${project.name}" />
+        <mkdir dir="${project.basedir}/deploy" />
+        <copy file="${project.builddir}/${project.id}.swc" todir="${project.basedir}/deploy" />
+    </target>
+
+</project>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project default="build" name="airpackage" xmlns:if="ant:if" xmlns:unless="ant:unless">
+    <available file="${user.home}/.ant/lib/ant-contrib.jar" property="antcontrib.available"/>
+    <target name="bootstrap-download" unless="antcontrib.available">
+        <mkdir dir="${user.home}/.ant/lib"/>
+        <get dest="${user.home}/.ant/lib/ant-contrib.jar"
+            src="https://repo1.maven.org/maven2/ant-contrib/ant-contrib/1.0b3/ant-contrib-1.0b3.jar"/>
+    </target>
+    <target name="bootstrap" depends="bootstrap-download">
+        <taskdef resource="net/sf/antcontrib/antlib.xml"
+            classpath="${user.home}/.ant/lib/ant-contrib.jar"/>
+    </target>
+    
+    <!-- CONFIG -->
+    <dirname property="package.basedir" file="${ant.file.airpackage}"/>
+    <property file="${package.basedir}/../build.properties" description="build properties"/>
+    <property name="version.properties" value="${package.basedir}/../version.properties"/>
+    <property name="project.builddir" value="${package.basedir}/../${output.build}"/>
+
+    <!-- ENVIRONMENT -->
+    <condition property="air.apm" value="apm.bat" else="apm">
+        <os family="windows"/>
+    </condition>
+
+
+
+    <!-- BUILD -->
+    <target name="project_deploy">
+        <ant antfile="${package.basedir}/../build.xml" target="deploy" inheritAll="false"/>
+    </target>
+
+    <!-- AIR PACKAGE -->
+    <target name="check-gh">
+        <exec executable="gh" failonerror="false" failifexecutionfails="false" resultproperty="gh.result">
+            <arg value="--version"/>
+        </exec>
+        <condition property="gh.check.failed">
+            <not>
+                <equals arg1="${gh.result}" arg2="0"/>
+            </not>
+        </condition>
+        <fail if="gh.check.failed" message="The GitHub CLI (gh) is required to publish the AIR package."/>
+    </target>
+
+    <target name="deploy" depends="check-gh,build">
+        <property file="${version.properties}"/>
+        <var name="version" value="${version_major}.${version_minor}.${version_build}"/>
+        <property name="packagefile" value="${project.id}_${version}.airpackage"/>
+        <echo message="Deploying to ${github.repo} ${version} ${packagefile}"/>
+        <exec executable="gh" failonerror="false">
+            <arg line="-R ${github.repo} release create ${version} --title ${version} --notes 'Release v${version}'"/>
+        </exec>
+        <!-- Upload to github release -->
+        <exec executable="gh" failonerror="true">
+            <arg line="-R ${github.repo} release upload ${version}"/>
+            <arg line="${package.basedir}/${packagefile}"/>
+            <arg line="--clobber"/>
+        </exec>
+        <!-- Publish to apm repository -->
+        <exec executable="${air.apm}" dir="${package.basedir}">
+            <arg line="publish ${packagefile}"/>
+        </exec>
+    </target>
+
+    <target name="build" depends="bootstrap,project_deploy">
+        <property file="${version.properties}"/>
+        <var name="version" value="${version_major}.${version_minor}.${version_build}"/>
+        <tstamp>
+            <format property="publish_date_time" pattern="yyyy-MM-dd'T'HH:mm:ss.000'Z'" locale="en,UK" timezone="UTC"/>
+        </tstamp>
+        <var name="airpackage.build" value="${package.basedir}/${output.build}"/>
+
+        <mkdir dir="${airpackage.build}"/>
+        <mkdir dir="${airpackage.build}/swc"/>
+        <copy file="${project.builddir}/${project.id}.swc" todir="${airpackage.build}/swc"/>
+        <copy file="${package.basedir}/../README.md" tofile="${airpackage.build}/README.md" overwrite="true" />
+        <copy file="${package.basedir}/../LICENSE.md" tofile="${airpackage.build}/LICENSE.md" overwrite="true" failonerror="false"/>
+        <copy file="${package.basedir}/../CHANGELOG.md" tofile="${airpackage.build}/CHANGELOG.md" overwrite="true" failonerror="false"/>
+        <copy file="${package.basedir}/package.json" tofile="${airpackage.build}/package.json" overwrite="true">
+            <filterchain>
+                <replacetokens>
+                    <token key="ID" value="${project.id}"/>
+                    <token key="NAME" value="${project.name}"/>
+                    <token key="DESCRIPTION" value="${project.description}"/>
+                    <token key="DATETIME" value="${publish_date_time}"/>
+                    <token key="VERSION" value="${version}"/>
+                    <token key="GITHUB_REPO" value="${github.repo}"/>
+                </replacetokens>
+            </filterchain>
+        </copy>
+        <exec executable="${air.apm}" dir="${package.basedir}">
+            <arg line="build ${output.build}"/>
+        </exec>
+
+        <!-- <delete dir="${airpackage.build}" /> -->
+    </target>
+
+</project>
