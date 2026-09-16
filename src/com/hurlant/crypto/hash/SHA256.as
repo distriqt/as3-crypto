@@ -57,7 +57,7 @@ package com.hurlant.crypto.hash
 			var e:uint = h[4];
 			var f:uint = h[5];
 			var g:uint = h[6];
-			var h:uint = h[7];
+			var hh:uint = h[7];
 			
 			for (var i:uint=0; i<x.length; i+=16) {
 				var olda:uint = a;
@@ -67,7 +67,7 @@ package com.hurlant.crypto.hash
 				var olde:uint = e;
 				var oldf:uint = f;
 				var oldg:uint = g;
-				var oldh:uint = h;
+				var oldh:uint = hh;
 
 				for (var j:uint=0; j<64; j++) {
 					if (j<16) {
@@ -78,8 +78,8 @@ package com.hurlant.crypto.hash
 						w[j] = w[j-16] + s0 + w[j-7] + s1;
 					}
 					var t2:uint = (rrol(a,2) ^ rrol(a,13) ^ rrol(a,22)) + ((a&b) ^ (a&c) ^ (b&c));
-					var t1:uint = h + (rrol(e,6) ^ rrol(e,11) ^ rrol(e,25)) + ((e&f)^(g&~e)) + k[j] + w[j];
-					h = g;
+					var t1:uint = hh + (rrol(e,6) ^ rrol(e,11) ^ rrol(e,25)) + ((e&f)^(g&~e)) + k[j] + w[j];
+					hh = g;
 					g = f;
 					f = e;
 					e = d + t1;
@@ -96,9 +96,9 @@ package com.hurlant.crypto.hash
 				e += olde;
 				f += oldf;
 				g += oldg;
-				h += oldh;
+				hh += oldh;
 			}
-			return [ a,b,c,d,e,f,g,h ];
+			return [ a,b,c,d,e,f,g,hh ];
 		}
 		
 		/*

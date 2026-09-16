@@ -84,10 +84,10 @@
             <arg line="-output ${project.builddir}/${project.id}.tests.swf" />
             <arg line="-debug=true" />
             <arg line="-source-path ${project.basedir}/${project.src}" />
-            <arg line="-source-path ${project.basedir}/src.tests" />
+            <arg line="-source-path ${project.basedir}/tests" />
             <arg line="-library-path+=${project.basedir}/libs/flexunit/flexunit-4.1.0.swc" />
             <arg line="-library-path+=${project.builddir}/${project.id}.swc" />
-            <arg line="${project.basedir}/src.tests/com/hurlant/tests/AS3CryptoTests.as" />
+            <arg line="${project.basedir}/tests/com/hurlant/tests/AS3CryptoTests.as" />
         </exec>
         <echo file="${project.builddir}/test-application.xml"><![CDATA[
 <?xml version="1.0" encoding="UTF-8"?>
@@ -107,7 +107,7 @@
     </target>
 
 
-    <target name="deploy" depends="build, test"> 
+    <target name="deploy" depends="build, test, docs"> 
         <echo message="Deploying ${project.name}" />
         <mkdir dir="${project.basedir}/deploy" />
         <copy file="${project.builddir}/${project.id}.swc" todir="${project.basedir}/deploy" />
