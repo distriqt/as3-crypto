@@ -63,8 +63,8 @@
             <env key="FALCON_HOME" value="${AIR_SDK_HOME}" />
             <arg line="-compiler.locale en_US" />
             <arg line="-source-path ${project.basedir}/${project.src}" />
-            <arg line="-window-title '$ ${project.name} ActionScript API Docs'" />
-            <arg line="-main-title '${project.name} ActionScript API Docs'" />
+            <arg line="-window-title '${project.name} API Docs'" />
+            <arg line="-main-title '${project.name} API Docs'" />
             <arg line="-doc-sources ${project.basedir}/${project.src}" />
             <arg line="-output ${project.basedir}/${output.docs}" />
             <arg line="-lenient" />
