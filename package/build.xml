@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project default="build" name="airpackage" xmlns:if="ant:if" xmlns:unless="ant:unless">
-    <taskdef resource="net/sf/antcontrib/antlib.xml"/>
-
+    <available file="${user.home}/.ant/lib/ant-contrib.jar" property="antcontrib.available"/>
+    <target name="bootstrap-download" unless="antcontrib.available">
+        <mkdir dir="${user.home}/.ant/lib"/>
+        <get dest="${user.home}/.ant/lib/ant-contrib.jar"
+            src="https://repo1.maven.org/maven2/ant-contrib/ant-contrib/1.0b3/ant-contrib-1.0b3.jar"/>
+    </target>
+    <target name="bootstrap" depends="bootstrap-download">
+        <taskdef resource="net/sf/antcontrib/antlib.xml"
+            classpath="${user.home}/.ant/lib/ant-contrib.jar"/>
+    </target>
+    
     <!-- CONFIG -->
     <dirname property="package.basedir" file="${ant.file.airpackage}"/>
     <property file="${package.basedir}/../build.properties" description="build properties"/>
@@ -12,6 +21,8 @@
     <condition property="air.apm" value="apm.bat" else="apm">
         <os family="windows"/>
     </condition>
+
+
 
     <!-- BUILD -->
     <target name="project_deploy">
@@ -51,11 +62,11 @@
         </exec>
     </target>
 
-    <target name="build" depends="project_deploy">
+    <target name="build" depends="bootstrap,project_deploy">
         <property file="${version.properties}"/>
         <var name="version" value="${version_major}.${version_minor}.${version_build}"/>
         <tstamp>
-            <format property="publish_date_time" pattern="yyyy-MM-dd'T'HH:mm:ss.000'Z'" locale="en,UK"/>
+            <format property="publish_date_time" pattern="yyyy-MM-dd'T'HH:mm:ss.000'Z'" locale="en,UK" timezone="UTC"/>
         </tstamp>
         <var name="airpackage.build" value="${package.basedir}/${output.build}"/>
 

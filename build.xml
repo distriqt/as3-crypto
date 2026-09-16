@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project default="build" name="lib" xmlns:if="ant:if" xmlns:unless="ant:unless">
-    <taskdef resource="net/sf/antcontrib/antlib.xml" />
-    <target name="bootstrap">
+    <available file="${user.home}/.ant/lib/ant-contrib.jar" property="antcontrib.available" />
+    <target name="bootstrap-download" unless="antcontrib.available">
         <mkdir dir="${user.home}/.ant/lib" />
         <get dest="${user.home}/.ant/lib/ant-contrib.jar"
             src="https://search.maven.org/remotecontent?filepath=ant-contrib/ant-contrib/1.0b3/ant-contrib-1.0b3.jar" />
+    </target>
+    <target name="bootstrap" depends="bootstrap-download">
+        <taskdef resource="net/sf/antcontrib/antlib.xml"
+            classpath="${user.home}/.ant/lib/ant-contrib.jar" />
     </target>
 
     <!-- CONFIG -->
@@ -41,7 +45,7 @@
     </target>
 
     <!-- BUILD -->
-    <target name="build">
+    <target name="build" depends="bootstrap">
         <property file="${version.properties}" />
         <var name="version" value="${version_major}.${version_minor}.${version_build}" />
         <echo message="Building ${project.name} v${version}" />
@@ -76,6 +80,7 @@
     <target name="test">
         <echo message="Running tests for ${project.name}" />
         <exec executable="${AIR_SDK_HOME}/bin/mxmlc" failonerror="true">
+            <arg line="-load-config ${AIR_SDK_HOME}/frameworks/air-config.xml" />
             <arg line="-output ${project.builddir}/${project.id}.tests.swf" />
             <arg line="-debug=true" />
             <arg line="-source-path ${project.basedir}/${project.src}" />
