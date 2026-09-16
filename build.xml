@@ -104,6 +104,8 @@
 
     <target name="deploy" depends="build, test"> 
         <echo message="Deploying ${project.name}" />
+        <mkdir dir="${project.basedir}/deploy" />
+        <copy file="${project.builddir}/${project.id}.swc" todir="${project.basedir}/deploy" />
     </target>
 
 </project>
